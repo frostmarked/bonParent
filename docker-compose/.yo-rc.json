@@ -1,0 +1,11 @@
+{
+  "generator-jhipster": {
+    "appsFolders": ["bonContentService", "bonGateway", "bonLivestockService", "bonReplicaService"],
+    "directoryPath": "../",
+    "gatewayType": "zuul",
+    "monitoring": "elk",
+    "consoleOptions": ["curator", "zipkin"],
+    "serviceDiscoveryType": "eureka",
+    "jwtSecretKey": "Y2YzOTk1NDA3ZTczOGNkY2Y4MjgyMmFlMWNjYWM3MGQ1YjRiY2ZkYWIwMjE3MmRmZDM4NGQxNTY2Zjg3Y2I5ZDcyYzA4MmJhNmYzMzg0NDllMmViYmM5MzJlNWVhZGQzMDY3Mw=="
+  }
+}

@@ -1,0 +1,330 @@
+
+
+/***************** DEPLOYMENT ********************/
+
+// kubernetes
+/*
+deployment {
+  deploymentType kubernetes
+  appsFolders [bonGateway, bonLivestockService, bonReplicaService, bonContentService]
+  dockerRepositoryName "frostmark"
+  gatewayType zuul
+  monitoring elk
+  serviceDiscoveryType eureka
+  kubernetesNamespace bonlimousin
+  kubernetesServiceType LoadBalancer
+}
+*/
+
+/***************** GATEWAY ********************/
+
+application {
+  config {
+    baseName bonGateway
+    applicationType gateway
+    serverPort 9000
+    packageName com.bonlimousin.gateway
+    authenticationType jwt
+    buildTool maven
+    databaseType sql
+    devDatabaseType h2Disk
+    prodDatabaseType postgresql
+    enableHibernateCache true
+    entitySuffix Entity
+    dtoSuffix DTO    
+    enableTranslation true
+    serviceDiscoveryType eureka    
+    cacheProvider hazelcast
+    messageBroker kafka
+
+    testFrameworks [protractor]
+    enableSwaggerCodegen true  
+
+    websocket spring-websocket
+    clientFramework angularX
+    clientTheme sketchy
+    clientPackageManager npm    
+    nativeLanguage sv
+    languages [sv, en]
+  }
+  entities *
+}
+
+enum UserRole {
+  ROLE_ADMIN, ROLE_USER, ROLE_ANONYMOUS
+}
+
+/***************** LIVESTOCK ********************/
+application {
+  config {
+    baseName bonLivestockService
+    applicationType microservice
+    serverPort 9001
+    packageName com.bonlimousin.livestock
+    authenticationType jwt
+    buildTool maven
+    databaseType sql
+    devDatabaseType h2Disk
+    prodDatabaseType postgresql
+    enableHibernateCache true
+    entitySuffix Entity
+    dtoSuffix DTO
+    enableSwaggerCodegen false
+    enableTranslation true
+    serviceDiscoveryType eureka
+    cacheProvider hazelcast
+    messageBroker kafka
+    testFrameworks [cucumber]    
+  }
+  entities Matrilineality, Cattle, Note, Pasture, Photo
+}
+
+service Matrilineality, Cattle, Note, Pasture, Photo with serviceClass
+paginate Matrilineality, Cattle, Note, Pasture, Photo with pagination
+filter Matrilineality, Cattle, Note, Pasture, Photo
+microservice Matrilineality, Cattle, Note, Pasture, Photo with bonLivestockService
+
+CATTLE_PHOTO_CAPTION_MIN_LENGTH = 1
+CATTLE_PHOTO_CAPTION_MAX_LENGTH = 140
+
+/* Map cows to their family tree */
+entity Matrilineality(bon_livestock_matrilineality) {
+  familyname String maxlength(127) required unique
+  earTagId Integer min(0) required unique
+  name String maxlength(127) required
+  country String minlength(2) maxlength(6) required
+  description String maxlength(1023)
+  cattleNameRegexPattern String maxlength(255) required
+  patriId Integer required 
+  patriName String maxlength(127) required
+  patriCountry String minlength(2) maxlength(6) required
+  polled Boolean required
+  storyHandle String
+  visibility UserRole
+}
+/* Base data on cows and bulls */
+entity Cattle(bon_livestock_cattle) {
+  earTagId Integer min(0) required unique
+  name String maxlength(127) required
+  visibility UserRole
+  upForSale Boolean required
+  showBlup Boolean required
+  alert Boolean required
+  storyHandle String
+}
+enum NoteCategory {
+  GENERAL, TREATMENT, HOOF_CARE, DEHORNING, 
+  PASTURE_CHANGE, PASTURE_PLANNED, 
+  WEIGHT, WEIGHING0, WEIGHING200, WEIGHING365, 
+  ALERT, TEMPER,
+  ESTRUS, INSEMINATION
+}
+entity Note(bon_livestock_note) {
+  category NoteCategory required
+  note String maxlength(512)
+  actualDate LocalDate
+}
+entity Pasture(bon_livestock_pasture) {
+  name String maxlength(127) required
+  description String maxlength(1023) required
+}
+entity Photo(bon_livestock_photo) {
+  image ImageBlob required
+  caption String minlength(CATTLE_PHOTO_CAPTION_MIN_LENGTH) maxlength(CATTLE_PHOTO_CAPTION_MAX_LENGTH) required
+  height Integer min(0)
+  width Integer min(0)
+  taken Instant
+  visibility UserRole
+}
+relationship ManyToOne {
+  Cattle{matrilineality(name)} to Matrilineality
+  Note{pasture(name)} to Pasture
+}
+relationship OneToMany {
+  Cattle{photo} to Photo{cattle(earTagId) required}
+  Cattle{note} to Note{cattle(earTagId) required}  
+}
+/***************** Replica of Central Registry ********************/
+application {
+  config {
+    baseName bonReplicaService
+    applicationType microservice
+    serverPort 9002
+    packageName com.bonlimousin.replica
+    authenticationType jwt
+    buildTool maven
+    databaseType sql
+    devDatabaseType h2Disk
+    prodDatabaseType postgresql
+    enableHibernateCache true
+    entitySuffix Entity
+    dtoSuffix DTO
+    enableSwaggerCodegen false
+    enableTranslation true
+    serviceDiscoveryType eureka
+    cacheProvider hazelcast
+    messageBroker kafka
+    testFrameworks [cucumber]    
+  }
+  entities SourceFile, Bovine, Blup, JournalEntry
+}
+
+readOnly Bovine, Blup, JournalEntry
+service SourceFile, Bovine, Blup, JournalEntry with serviceClass
+paginate SourceFile, Bovine, Blup, JournalEntry with pagination
+filter SourceFile, Bovine, Blup, JournalEntry
+microservice SourceFile, Bovine, Blup, JournalEntry with bonReplicaService
+
+entity SourceFile(bon_replica_sourcefile) {
+  name String maxlength(127) required
+  zipFile AnyBlob required
+  processed Instant
+  outcome String  
+}
+enum Gender {
+  HEIFER, BULL
+}
+enum HornStatus {
+  UNKNOWN, HORNED, POLLED, SCURS, DEHORNED, DISBUDDED
+}
+enum BovineStatus {
+  UNKNOWN, SOLD, MEAT, ON_FARM
+}
+/* */
+entity Bovine(bon_replica_bovine) {
+  earTagId Integer min(0) required unique
+  masterIdentifier String maxlength(127) required unique
+  country String minlength(2) maxlength(6) required
+  herdId Integer min(0) required
+  birthDate Instant required
+  gender Gender required
+  name String maxlength(255) required
+  bovineStatus BovineStatus required
+  hornStatus HornStatus required
+  matriId Integer required
+  patriId Integer required
+  weight0 Integer min(0) max(99)
+  weight200 Integer min(0) max(999)
+  weight365 Integer min(0) max(9999)
+}
+/* Best Linear Unbiased Prediction, direct and maternal attributes */
+entity Blup(bon_replica_blup) {  
+  /* BirthWeight */
+  t0 Integer min(0)
+  /* Direct BirthWeight */
+  d0 Integer min(0)
+  /* Maternal BirthWeight - maternal genetic predisposition of likelyhood of a heavy calf */
+  m0 Integer min(0)
+  /* Weight 200 days */
+  t200 Integer min(0)
+  /* Direct weight 200 days */
+  d200 Integer min(0)
+  /* Maternal weight 200 days */
+  m200 Integer min(0)
+  /* Weight 365 days */
+  t365 Integer min(0)
+  /* Direct weight 365 days */
+  d365 Integer min(0)  
+  /* Score */
+  total Integer min(0)
+  /* Status  */
+  status String minlength(1)  
+}
+/* Events */
+// need to figure this out ... later
+enum EntryStatus {
+  FOD, IB, TU, RET, UTG
+}
+entity JournalEntry(bon_replica_journal_entry) {
+  status EntryStatus required
+  date Instant required
+  edited Instant
+  herdId Integer min(0) required
+  newHerdId Integer min(0)
+  subState1 Integer
+  subState2 Integer
+}
+relationship OneToOne {
+  Blup{bovine(earTagId) required} to Bovine{blup} with jpaDerivedIdentifier 
+}
+relationship ManyToOne {
+  Bovine{SourceFile} to SourceFile
+}
+relationship OneToMany {
+  Bovine{journalEntries} to JournalEntry{bovine(earTagId)}
+}
+
+/***************** CONTENT ********************/
+application {
+  config {
+    baseName bonContentService
+    applicationType microservice
+    serverPort 9003
+    packageName com.bonlimousin.content
+    authenticationType jwt
+    buildTool maven    
+    databaseType sql
+    devDatabaseType h2Disk
+    prodDatabaseType postgresql
+    enableHibernateCache true
+    entitySuffix Entity
+    dtoSuffix DTO    
+    enableSwaggerCodegen false
+    enableTranslation true
+    serviceDiscoveryType eureka
+    cacheProvider hazelcast
+    messageBroker kafka
+    testFrameworks [cucumber]
+    searchEngine elasticsearch
+  }
+  entities Story, Fragment, Tag, Localized
+}
+
+service Story, Fragment, Tag, Localized with serviceClass
+paginate Story, Fragment, Tag, Localized with infinite-scroll
+filter Story, Fragment, Tag, Localized
+search Fragment, Localized with elasticsearch
+microservice Story, Fragment, Tag, Localized with bonContentService
+
+enum StoryCategory {
+  NEWS, MATRILINEALITY, CATTLE, IT
+}
+entity Story(bon_content_story) {
+  category StoryCategory required
+  name String required minlength(2) unique
+  visibility UserRole
+}
+enum FragmentTemplate {
+  V1, V2, V3
+}
+entity Fragment(bon_content_fragment) {
+  template FragmentTemplate required
+  name String required minlength(2)
+  title String maxlength(127)
+  ingress String maxlength(255)
+  body TextBlob 
+  image ImageBlob
+  caption String maxlength(255)
+  width Integer
+  height Integer
+  orderNo Integer required
+  visibility UserRole
+}
+entity Localized(bon_content_localized) {
+  i18n String minlength(2) pattern(/[a-z]+/) required
+  title String maxlength(127) required
+  ingress String maxlength(255)
+  body TextBlob required
+  caption String maxlength(255)
+  visibility UserRole
+}
+entity Tag(bon_content_tag) {
+  name String required minlength(2)
+}
+relationship OneToMany {
+  Story{fragment} to Fragment{story(name) required}
+  Fragment{localizedFragment} to Localized{fragment(orderNo) required}
+}
+relationship ManyToMany {
+  Fragment{tag(name)} to Tag{fragment}
+}
