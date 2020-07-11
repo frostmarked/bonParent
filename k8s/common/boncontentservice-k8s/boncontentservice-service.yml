@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: boncontentservice
+  namespace: bonlimousin
+  labels:
+    app: boncontentservice
+spec:
+  selector:
+    app: boncontentservice
+  ports:
+    - name: http
+      port: 9003

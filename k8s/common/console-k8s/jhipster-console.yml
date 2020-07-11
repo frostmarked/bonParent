@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jhipster-console
+  namespace: bonlimousin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jhipster-console
+  template:
+    metadata:
+      labels:
+        app: jhipster-console
+    spec:
+      containers:
+        - image: jhipster/jhipster-console:v4.1.0
+          name: jhipster-console
+          ports:
+            - containerPort: 5601
+          resources:
+            requests:
+              memory: '512Mi'
+              cpu: '500m'
+            limits:
+              memory: '1Gi'
+              cpu: '1'
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jhipster-console
+  namespace: bonlimousin
+  labels:
+    app: jhipster-console
+spec:
+  ports:
+    - name: http
+      port: 5601
+      targetPort: 5601
+  type: ClusterIP
+  selector:
+    app: jhipster-console
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: jhipster-console
+  namespace: bonlimousin
+spec:
+  rules:
+    - host: jhipster-console.bonlimousin.limousin.se
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: jhipster-console
+              servicePort: 5601

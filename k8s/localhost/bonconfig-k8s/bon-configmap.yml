@@ -1,0 +1,20 @@
+# example of running it localy, in theory. 
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bon-configmap
+  namespace: bonlimousin
+data:
+  jhipster-registry.jhipster-security-authentication-jwt-base64-secret: YzAzOGZmNThlNDc4YjUzZDYzNGMxMjkwNjAyMTg2ZTIzZTg1Y2QwMDc2ZjdjNDcwYzI1ZDA1NmNiMDU1YzdmNGY5ZjQ2NzAyNGRjZmM3ZDBjMzJkMTAxNGRlYzdmZGE5MjBhYzBiOTRjYjdiYjFhNTgwMWFiODdmOGEyYzRmYjY=
+  bongateway.postgresql.url: jdbc:postgresql://host.docker.internal:5432/bonGateway
+  bongateway.postgresql.username: bonGateway
+  bongateway.jhipster-security-authentication-jwt-base64-secret: YzAzOGZmNThlNDc4YjUzZDYzNGMxMjkwNjAyMTg2ZTIzZTg1Y2QwMDc2ZjdjNDcwYzI1ZDA1NmNiMDU1YzdmNGY5ZjQ2NzAyNGRjZmM3ZDBjMzJkMTAxNGRlYzdmZGE5MjBhYzBiOTRjYjdiYjFhNTgwMWFiODdmOGEyYzRmYjY=
+  bonlivestockservice.postgresql.url: jdbc:postgresql://host.docker.internal:5432/bonLivestockService
+  bonlivestockservice.postgresql.username: bonLivestockService
+  bonlivestockservice.jhipster-security-authentication-jwt-base64-secret: YzAzOGZmNThlNDc4YjUzZDYzNGMxMjkwNjAyMTg2ZTIzZTg1Y2QwMDc2ZjdjNDcwYzI1ZDA1NmNiMDU1YzdmNGY5ZjQ2NzAyNGRjZmM3ZDBjMzJkMTAxNGRlYzdmZGE5MjBhYzBiOTRjYjdiYjFhNTgwMWFiODdmOGEyYzRmYjY=
+  bonreplicaservice.postgresql.url: jdbc:postgresql://host.docker.internal:5432/bonReplicaService
+  bonreplicaservice.postgresql.username: bonReplicaService
+  bonreplicaservice.jhipster-security-authentication-jwt-base64-secret: YzAzOGZmNThlNDc4YjUzZDYzNGMxMjkwNjAyMTg2ZTIzZTg1Y2QwMDc2ZjdjNDcwYzI1ZDA1NmNiMDU1YzdmNGY5ZjQ2NzAyNGRjZmM3ZDBjMzJkMTAxNGRlYzdmZGE5MjBhYzBiOTRjYjdiYjFhNTgwMWFiODdmOGEyYzRmYjY=
+  boncontentservice.postgresql.url: jdbc:postgresql://host.docker.internal:5432/bonContentService
+  boncontentservice.postgresql.username: bonContentService
+  boncontentservice.jhipster-security-authentication-jwt-base64-secret: YzAzOGZmNThlNDc4YjUzZDYzNGMxMjkwNjAyMTg2ZTIzZTg1Y2QwMDc2ZjdjNDcwYzI1ZDA1NmNiMDU1YzdmNGY5ZjQ2NzAyNGRjZmM3ZDBjMzJkMTAxNGRlYzdmZGE5MjBhYzBiOTRjYjdiYjFhNTgwMWFiODdmOGEyYzRmYjY=

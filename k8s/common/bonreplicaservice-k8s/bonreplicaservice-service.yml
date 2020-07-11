@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: bonreplicaservice
+  namespace: bonlimousin
+  labels:
+    app: bonreplicaservice
+spec:
+  selector:
+    app: bonreplicaservice
+  ports:
+    - name: http
+      port: 9002

@@ -1,0 +1,17 @@
+{
+  "generator-jhipster": {
+    "appsFolders": ["bonContentService", "bonGateway", "bonLivestockService", "bonReplicaService"],
+    "directoryPath": "../../",
+    "serviceDiscoveryType": "eureka",
+    "jwtSecretKey": "NGMyZTJkZWYzNzA0MTQ0NTFlZDQ4OTA3MzUwMzY3ODZmYWY2ZDlkOWI0YmE5YzVlZDgzMWE2NGExNGQ4Y2I1YjIxZGM2ZmMzYjk1ODRhOWJlNDZkYWRkNWQ5MWMzMTgwMThiMw==",
+    "dockerRepositoryName": "frostmark",
+    "dockerPushCommand": "docker push",
+    "kubernetesNamespace": "bonlimousin",
+    "kubernetesServiceType": "Ingress",
+    "kubernetesUseDynamicStorage": false,
+    "ingressType": "nginx",
+    "ingressDomain": "limousin.se",
+    "monitoring": "elk",
+    "istio": false
+  }
+}

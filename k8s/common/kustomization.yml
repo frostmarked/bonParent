@@ -1,0 +1,32 @@
+commonLabels:
+  app.kubernetes.io/genereted-by: JHipster
+
+namespace: bonlimousin
+
+resources:
+  - namespace.yml
+  - ../scaleway/bonconfig-k8s/bon-secret.yml
+  - ../scaleway/bonconfig-k8s/bon-configmap.yml
+  # Individual apps
+  - boncontentservice-k8s/boncontentservice-deployment.yml
+  - boncontentservice-k8s/boncontentservice-service.yml  
+  - bonlivestockservice-k8s/bonlivestockservice-deployment.yml
+  - bonlivestockservice-k8s/bonlivestockservice-service.yml
+  - bonreplicaservice-k8s/bonreplicaservice-deployment.yml
+  - bonreplicaservice-k8s/bonreplicaservice-service.yml
+  - bongateway-k8s/bongateway-deployment.yml
+  - bongateway-k8s/bongateway-service.yml
+  - bongateway-k8s/bongateway-ingress.yml
+  # messagebroker
+  - messagebroker-k8s/kafka.yml
+  # monitoring elk
+  - console-k8s/jhipster-elasticsearch.yml
+  - console-k8s/jhipster-logstash.yml
+  - console-k8s/jhipster-console.yml
+  - console-k8s/jhipster-dashboard-console.yml
+  - console-k8s/jhipster-zipkin.yml
+  # service discovery eureka/consul
+  - registry-k8s/jhipster-registry.yml
+  - registry-k8s/application-configmap.yml
+
+patchesJson6902:

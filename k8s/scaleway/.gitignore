@@ -1,0 +1,8 @@
+# excludes the sensitive files
+#   ./kubeconfig-k8s-bonlimousin.yml  - k8s context file for scaleway cluster
+#   ./bonconfig-k8s/bon-configmap.yml - database config etc
+#   ./bonconfig-k8s/bon-secret.yml    - passwords etc
+
+*
+*/
+!.gitignore

@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: bonlivestockservice
+  namespace: bonlimousin
+  labels:
+    app: bonlivestockservice
+spec:
+  selector:
+    app: bonlivestockservice
+  ports:
+    - name: http
+      port: 9001

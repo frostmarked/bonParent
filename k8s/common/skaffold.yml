@@ -1,0 +1,21 @@
+apiVersion: skaffold/v1
+kind: Config
+build:
+  artifacts:
+    - image: frostmark/boncontentservice
+      context: ../../../bonContentService
+      jib: {}
+    - image: frostmark/bongateway
+      context: ../../../bonGateway
+      jib: {}
+    - image: frostmark/bonlivestockservice
+      context: ../../../bonLivestockService
+      jib: {}
+    - image: frostmark/bonreplicaservice
+      context: ../../../bonReplicaService
+      jib: {}
+  tagPolicy:
+    envTemplate:
+      template: '{{.IMAGE_NAME}}:latest'
+deploy:
+  kustomize: {}

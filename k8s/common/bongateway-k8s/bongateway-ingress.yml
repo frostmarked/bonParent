@@ -1,0 +1,15 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: bongateway
+  namespace: bonlimousin
+spec:
+  rules:
+    #bongateway.bonlimousin.limousin.se    
+    - host: bongateway.bonlimousin.393a4c58-1580-4f08-89d7-15f104acfc8e.nodes.k8s.fr-par.scw.cloud
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: bongateway
+              servicePort: 9000
