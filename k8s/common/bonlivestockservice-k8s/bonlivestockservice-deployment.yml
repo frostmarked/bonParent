@@ -30,6 +30,7 @@ spec:
       containers:
         - name: bonlivestockservice-app
           image: frostmark/bonlivestockservice
+          imagePullPolicy: Always
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: prod

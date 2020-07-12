@@ -78,6 +78,13 @@ defaultappsdelete() {
     kubectl delete -f bonreplicaservice-${suffix}/    
 }
 
+defaultrolloutapps() {
+    kubectl rollout restart deployment/bongateway -n bonlimousin
+    kubectl rollout restart deployment/boncontentservice -n bonlimousin
+    kubectl rollout restart deployment/bonlivestockservice -n bonlimousin
+    kubectl rollout restart deployment/bonreplicaservice -n bonlimousin
+}
+
 kustomize() {
     kubectl apply -k ./
 }
@@ -88,14 +95,15 @@ scaffold() {
     skaffold run
 }
 
-[[ "$@" =~ ^-[abfgks]{1}$ ]]  || usage;
+[[ "$@" =~ ^-[abfgrks]{1}$ ]]  || usage;
 
-while getopts ":abfgks" opt; do
+while getopts ":abfgrks" opt; do
     case ${opt} in
     f ) echo "Applying default \`kubectl apply -f\`"; default ;;
     g ) echo "Deleting default \`kubectl delete -f\`"; defaultdelete ;;
     a ) echo "Applying default \`kubectl apply -f\`"; defaultapps ;;
     b ) echo "Deleting default \`kubectl delete -f\`"; defaultappsdelete ;;
+    r ) echo "Rollout restart default apps deplyments \`kubectl rollout restart\`"; defaultrolloutapps ;;
     k ) echo "Applying kustomize \`kubectl apply -k\`"; kustomize ;;
     s ) echo "Applying using skaffold \`skaffold run\`"; scaffold ;;
     \? | * ) usage ;;
