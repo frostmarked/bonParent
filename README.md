@@ -42,20 +42,32 @@ BFF (Backend-for-frontend) setup so that the APIs can provide aggregated data fr
 
 https://github.com/frostmarked/bonGateway
 
+![](https://github.com/frostmarked/bonGateway/workflows/Bon%20Gateway%20CI/badge.svg)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=frostmarked_bonGateway&metric=alert_status)](https://sonarcloud.io/dashboard?id=frostmarked_bonGateway)
+
 ### Bon Replica Service
 Provides a clone of data from the central swedish registry for domestic animals.
 
 https://github.com/frostmarked/bonReplicaService
+
+![](https://github.com/frostmarked/bonReplicaService/workflows/Bon%20Replica%20Service%20CI/badge.svg)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=frostmarked_bonReplicaService&metric=alert_status)](https://sonarcloud.io/dashboard?id=frostmarked_bonReplicaService)
 
 ### Bon Livestock Service
 Additional data about cows that is of more or less interest. e.g. images etc
 
 https://github.com/frostmarked/bonLivestockService
 
+![](https://github.com/frostmarked/bonLivestockService/workflows/Bon%20Livestock%20Service%20CI/badge.svg)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=frostmarked_bonLivestockService&metric=alert_status)](https://sonarcloud.io/dashboard?id=frostmarked_bonLivestockService)
+
 ### Bon Content Service
 Very small and simple CMS that can hold some kind of newsworthy text.
 
 https://github.com/frostmarked/bonContentService
+
+![](https://github.com/frostmarked/bonContentService/workflows/Bon%20Content%20Service%20CI/badge.svg)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=frostmarked_bonContentService&metric=alert_status)](https://sonarcloud.io/dashboard?id=frostmarked_bonContentService)
 
 ## Slightly different trail
 <a name="differenttrail"></a>
