@@ -103,6 +103,20 @@ plus https://graphql-code-generator.com/ for generating typescript from graphql 
 Using https://www.graphql-java-kickstart.com/spring-boot/ as server-side lib<br>
 plus https://github.com/kobylynskyi/graphql-java-codegen/tree/master/plugins/maven for generating java from schema
 
+**Note** 
+GraphQl with kickstart breaks regular test environment.
+Handle for now according to issue on github
+https://github.com/graphql-java-kickstart/graphql-spring-boot/issues/230
+```
+spring:
+  autoconfigure:
+    exclude:
+      - graphql.kickstart.spring.web.boot.GraphQLWebAutoConfiguration
+      - graphql.kickstart.spring.web.boot.GraphQLWebsocketAutoConfiguration
+```
+
+and use @GraphQLTest annotation on test class
+
 ### Only admins can register new users
 Disabled public registration of new users. The website will have a signed in mode eventually but I only want certain people to have access.<br/>
 By toggling a boolean spring property its back to default.<br/>
@@ -119,6 +133,62 @@ jhipster ci-cd
 
 The pipeline take different routes depending on if its triggered by a release or not.<br/>
 Except for difference in versioning of artifact and image the release flow will rollout a new version to given kubernetes cluster.
+
+### Liquibase with spring profile prod
+Puh... the app did not start... why why why???
+
+You might think it did not start due to something with eureka and the discovery client. 
+After all the last bit of information you get from the log is:  
+```
+2020-07-25 09:16:18.793  INFO 1 --- [nfoReplicator-0] com.netflix.discovery.DiscoveryClient    : Saw local status change event StatusChangeEvent [timestamp=1595668578792, current=UP, previous=STARTING]
+2020-07-25 09:16:18.806  INFO 1 --- [nfoReplicator-0] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_BONGATEWAY/bongateway:f33e529ccc6fdd5eebba10e2679c4082: registering service...
+2020-07-25 09:16:19.099  INFO 1 --- [nfoReplicator-0] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_BONGATEWAY/bongateway:f33e529ccc6fdd5eebba10e2679c4082 - registration status: 204
+2020-07-25 09:16:19.205  INFO 1 --- [           main] c.b.gateway.config.WebConfigurer         : Web application configuration, using profiles: prod
+2020-07-25 09:16:19.206  INFO 1 --- [           main] c.b.gateway.config.WebConfigurer         : Web application fully configured
+2020-07-25 09:16:27.795  INFO 1 --- [trap-executor-0] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2020-07-25 09:16:42.797  INFO 1 --- [trap-executor-0] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2020-07-25 09:16:43.523  WARN 1 --- [scoveryClient-0] c.netflix.discovery.TimedSupervisorTask  : task supervisor timed out
+
+java.util.concurrent.TimeoutException: null
+	at java.base/java.util.concurrent.FutureTask.get(Unknown Source)
+	at com.netflix.discovery.TimedSupervisorTask.run(TimedSupervisorTask.java:68)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Unknown Source)
+	at java.base/java.util.concurrent.FutureTask.run(Unknown Source)
+	at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(Unknown Source)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source)
+	at java.base/java.lang.Thread.run(Unknown Source)
+
+```
+
+Dont be fooled like me...
+Its actually liquibase that found a lock. 
+But! the default setup from jhipster makes that very important piece of info go away in silence. 
+Or should I blame Spring Boot? or Liquibase?...
+Anyway setting logging in prod profile to DEBUG solved the mystery.
+
+```
+2020-07-25 09:25:29.166  INFO 1 --- [           main] liquibase.executor.jvm.JdbcExecutor      : SELECT COUNT(*) FROM public.databasechangeloglock
+2020-07-25 09:25:29.172  INFO 1 --- [           main] liquibase.executor.jvm.JdbcExecutor      : SELECT COUNT(*) FROM public.databasechangeloglock
+2020-07-25 09:25:29.180  INFO 1 --- [           main] liquibase.executor.jvm.JdbcExecutor      : SELECT LOCKED FROM public.databasechangeloglock WHERE ID=1
+2020-07-25 09:25:29.187  INFO 1 --- [           main] l.lockservice.StandardLockService        : Waiting for changelog lock....
+```
+
+Probably the container/app got terminated in a bad state. Unlock Liquibase with:
+```
+UPDATE DATABASECHANGELOGLOCK SET LOCKED=false, LOCKGRANTED=null, LOCKEDBY=null where ID=1;
+```
+
+From now on I will explicitly set logging level in prod profile to: 
+
+```
+logging:
+  level:
+    ROOT: INFO
+    io.github.jhipster: INFO
+    com.bonlimousin.gateway: INFO
+    liquibase: INFO
+```
 
 ## What in the name of some norse god!?
 **Why did I use camelCase in jdl basename???**<br/>
