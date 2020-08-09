@@ -190,6 +190,226 @@ logging:
     liquibase: INFO
 ```
 
+### Kafka with spring-kafka
+I guess there is a good explanation to why jhipster does not use spring-kafka.<br/>
+Due to I have not figured that out I will use spring-kafka. 
+Can not see any point in writing code that has already been written.<br/> 
+The change pretty much boils down to:
+
+Swap kafka-clients dependency for 
+```
+<dependency>
+	<groupId>org.springframework.kafka</groupId>
+	<artifactId>spring-kafka</artifactId>
+</dependency>
+```
+
+And use existing KafkaProperties for config of templates and listeners 
+```
+@Configuration
+public class KafkaConfiguration {
+
+	@Autowired
+	private KafkaProperties kafkaProperties;
+
+	@Bean
+	public ProducerFactory<String, Object> producerFactory() {
+		return new DefaultKafkaProducerFactory<>(kafkaProperties.getProducerProps());
+	}
+
+	@Bean
+	public KafkaTemplate<String, Object> kafkaTemplate() {
+		return new KafkaTemplate<>(producerFactory());
+	}
+
+	@Bean
+	public ConsumerFactory<String, Object> consumerFactory() {
+		return new DefaultKafkaConsumerFactory<>(kafkaProperties.getConsumerProps());
+	}
+
+	@Bean
+	public ConcurrentKafkaListenerContainerFactory<String, Object> kafkaListenerContainerFactory() {
+		ConcurrentKafkaListenerContainerFactory<String, Object> factory = new ConcurrentKafkaListenerContainerFactory<>();
+		factory.setConsumerFactory(consumerFactory());
+		return factory;
+	}
+}
+``` 
+
+### Testing with Kafka
+It exists a few reasonable tools and strategies. And yes, testcontainers kafka seems superior.<br/>
+```
+<dependency>
+	<groupId>org.testcontainers</groupId>
+	<artifactId>kafka</artifactId>
+	<scope>test</scope>
+</dependency>
+```
+
+I thought it was obvious at first but had to iterate several times 
+before deciding for below solution.
+
+Created a test config that will hi-jack kafkaproperties 
+and override bootstrap-servers property, if kafkacontainer is running. 
+```
+@TestConfiguration
+public class KafkaTestConfiguration {
+	
+	public static boolean started = false;
+	public static KafkaContainer kafkaContainer;
+	
+    @Autowired
+    public void kafkaProperties(KafkaProperties kafkaProperties) {
+    	if(started) {
+    		kafkaProperties.setBootStrapServers(kafkaContainer.getBootstrapServers());	
+    	}
+    }
+    
+    public static void startKafka() {
+    	kafkaContainer = new KafkaContainer("5.5.0").withNetwork(null);
+        kafkaContainer.start();
+        started = true;
+    }
+    
+    public static void stopKafka() {
+    	if(started) {
+    		kafkaContainer.stop();
+    	}
+    }
+}
+```
+
+The test class will then use it as follows.<br/>
+Note: Remember to consumer.commitSync(); if you plan to have several tests so the previous records 
+do not linger around
+```
+@SpringBootTest(classes = { BonReplicaServiceApp.class, KafkaTestConfiguration.class })
+class MyKafkaIT {
+
+	@Autowired
+	private ConsumerFactory<String, Object> consumerFactory;
+
+	@BeforeAll
+	public static void setup() {
+		KafkaTestConfiguration.startKafka();
+	}
+	
+	@Test	
+	@Transactional
+	void testA() {
+		// trigger broadcasting of topic
+		ConsumerRecords<String, Object> records = consumeChanges();				
+		assertThat(records.count()).isEqualTo(1);
+		ConsumerRecord<String, Object> record = records.iterator().next();
+		assertEquals("CREATE", record.key());
+		// and so on...	
+	}
+	
+	private ConsumerRecords<String, Object> consumeChanges() {
+		Consumer<String, Object> consumer = consumerFactory.createConsumer();		
+		consumer.subscribe(Collections.singletonList("MY_TOPIC"));
+		ConsumerRecords<String, Object> records = consumer.poll(Duration.ofSeconds(2));
+		consumer.commitSync();
+		consumer.unsubscribe();
+		consumer.close();
+		return records;
+	}
+	
+	@AfterAll
+	public static void tearDown() {
+		KafkaTestConfiguration.stopKafka();
+	}
+}
+```
+
+### Entity change emitter
+The apps uses Kafka and the jhipster module Entity Audit with Javers, 
+https://www.jhipster.tech/modules/marketplace/#/details/generator-jhipster-entity-audit.<br/>
+
+What can we do of that? Broadcast changes!<br/>
+
+Javers has pointcuts on spring repositories. 
+So I will have a pointcut on javers and piggy back on its functionality. 
+```
+@Component
+@Aspect
+@Order(Ordered.LOWEST_PRECEDENCE)
+public class EntityChangeJaversAspect {
+
+	private final EntityChangeService entityChangeService;
+
+	public EntityChangeJaversAspect(EntityChangeService entityChangeService) {
+		this.entityChangeService = entityChangeService;
+	}
+
+	@AfterReturning(pointcut = "execution(public * commit(..)) && this(org.javers.core.Javers)", returning = "commit")
+	public void onJaversCommitExecuted(JoinPoint jp, Commit commit) {
+		this.entityChangeService.broadcastEntityChange(commit);
+	}
+} 
+```
+
+A simple service for checking if there were any changes? 
+and if so transform javers commit and send it with kafka
+```
+@Service
+public class EntityChangeService {
+
+	private final Logger log = LoggerFactory.getLogger(EntityChangeService.class);
+
+	private final KafkaTemplate<String, EntityChangeVO> kafkaTemplate;
+
+	public EntityChangeService(KafkaTemplate<String, EntityChangeVO> entityChangeKafkaTemplate) {
+		this.kafkaTemplate = entityChangeKafkaTemplate;
+	}
+
+	public void broadcastEntityChange(Commit commit) {
+		if (commit.getSnapshots().isEmpty()) {
+			return;
+		}
+		CdoSnapshot snapshot = commit.getSnapshots().get(0);
+		EntityChangeVO vo = CdoSnapshotToEntityChangeVOConverter.convert(snapshot, new EntityChangeVO());
+		String topic = "ENTITY_CHANGE_" + getManagedTypeSimpleName(snapshot).toUpperCase();
+		String key = vo.getAction();
+		send(new ProducerRecord<>(topic, key, vo));
+	}
+	
+	public void send(ProducerRecord<String, EntityChangeVO> record) {			
+		kafkaTemplate.send(record).addCallback(
+				result -> log.debug(
+						"Sent entity-change-topic {} with key {} and changes to params {} with resulting offset {} ",
+						record.topic(), record.key(), record.value().getChangedEntityFields(), result.getRecordMetadata().offset()),
+				ex -> log.error("Failed to send entity-change-topic {} with key {} and changes to params {} due to {} ",
+						record.topic(), record.key(), record.value().getChangedEntityFields(), ex.getMessage(), ex));
+	}
+
+	protected static String getManagedTypeSimpleName(CdoSnapshot snapshot) {
+		String className = snapshot.getManagedType().getName();
+		return className.substring(className.lastIndexOf('.') + 1);
+	}
+
+}
+```
+
+Note: code is currently in bonReplicaService and a listener in bonLivestockService.
+Note2: the emit might be "false-positive". Depending on the entity change belongs to a transaction 
+that later on will roll back so will the javers commit. And you will end up with no trace in db of given sent out data.   
+
+## Did I just find a bug???
+**Incorrect entity name in integration tests**
+When generating code from JDL some ITs have lines like this
+```
+if (TestUtil.findAll(em, Cattle.class).isEmpty()) {
+```
+while it should be 
+```
+if (TestUtil.findAll(em, CattleEntity.class).isEmpty()) {
+```
+due to I use the jdl application config
+```
+entitySuffix Entity
+```
+
 ## What in the name of some norse god!?
 **Why did I use camelCase in jdl basename???**<br/>
 I should have used lower case and gotten rid of case sensitivity confusions<br>
