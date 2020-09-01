@@ -3,6 +3,8 @@ kind: Ingress
 metadata:
   name: bongateway
   namespace: bonlimousin
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 8m
 spec:
   rules:
     #bongateway.bonlimousin.limousin.se    

@@ -94,7 +94,7 @@ spec:
             - name: JAVA_OPTS
               value: ' -Xmx256m -Xms256m'
             - name: SPRING_LIQUIBASE_CONTEXTS
-              value: prod,faker
+              value: prod,core
           resources:
             requests:
               memory: '512Mi'

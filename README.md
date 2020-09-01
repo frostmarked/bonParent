@@ -395,6 +395,90 @@ Note: code is currently in bonReplicaService and a listener in bonLivestockServi
 Note2: the emit might be "false-positive". Depending on the entity change belongs to a transaction 
 that later on will roll back so will the javers commit. And you will end up with no trace in db of given sent out data.   
 
+
+### Prototype - Ahead of time (or JIT) responsive images
+I like to have all data in the database, which includes images. Lazy and simple.<br>
+I also like html5 srcset for images. The browser can pick a suitable image depending on 
+device and context.<br>
+So, instead of returning a high resolution image encoded in base64 every time. I use Thumbnailator
+```
+<dependency>
+	<groupId>net.coobird</groupId>
+	<artifactId>thumbnailator</artifactId>
+	<version>${net.coobird.thumbnailator.version}</version>
+</dependency>
+```
+
+Not sure if its a valid plan to use bootstrap containers max width as base for image size... <br>
+For now it will have to do
+```
+public enum PictureSize {
+	ORIGINAL(null), SMALL(540), MEDIUM(720), LARGE(960), XL(1140);
+```
+
+Currently its very simple. If no image exist on disk, create it 
+```
+Path path = Paths.get(imageBaseDir, imageName);
+if (!Files.exists(path)) {
+	try (ByteArrayInputStream bais = new ByteArrayInputStream(image)) {
+		if (pictureSize.pixelWidth() != null) {
+			Thumbnails.of(bais).width(pictureSize.pixelWidth()).toFile(path.toFile());
+		} else {
+			Thumbnails.of(bais).scale(1).toFile(path.toFile());
+		}
+	}
+}
+```
+
+The public APIs (rest and graphql) will from now on return several urls instead of a base64 string.<br>
+A directive can help with populating the img attributes, srcset and src.  
+```
+import { Directive, ElementRef, Input, Renderer2, OnChanges } from '@angular/core';
+import { PictureVo, Maybe } from '../../bonpublicgraphql/bonpublicgraphql';
+import { pickPictureSourceUrl } from 'app/shared/bon/picturevo-util';
+
+@Directive({
+  selector: '[jhiCowPicture]',
+})
+export class CowPictureDirective implements OnChanges {
+  @Input('jhiCowPicture')
+  picture?: Maybe<PictureVo>;
+  @Input()
+  targetWidth?: string;
+
+  constructor(private renderer: Renderer2, private el: ElementRef) {}
+
+  ngOnChanges(): void {
+    if (this.picture?.sources) {
+      const tw = this.targetWidth ? parseInt(this.targetWidth, 10) || 992 : 992;
+      const imgSrc = pickPictureSourceUrl(this.picture.sources, tw);
+      this.renderer.setAttribute(this.el.nativeElement, 'src', imgSrc);
+
+      const imgSrcSet = this.picture?.sources
+        .filter(ps => ps && ps.url !== imgSrc)
+        .map(ps => `${ps!.url} ${ps!.width}w`)
+        .join(',');
+      this.renderer.setAttribute(this.el.nativeElement, 'srcset', imgSrcSet);
+    }
+  }
+}
+
+```
+
+Note: Perhaps the image should be stored to a persistent volume instead of java.io.tmpdir <br>
+Note2: Ingress/nginx will probably have a low/default value for request body size. Handle it with an annotation
+```
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: bongateway
+  namespace: bonlimousin
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 8m
+spec:
+  rules:
+``` 
+
 ## Did I just find a bug???
 **Incorrect entity name in integration tests**
 When generating code from JDL some ITs have lines like this
@@ -414,6 +498,12 @@ entitySuffix Entity
 **Why did I use camelCase in jdl basename???**<br/>
 I should have used lower case and gotten rid of case sensitivity confusions<br>
 and sometimes its just ugly...
+
+**Linage != Lineage**<br/>
+If you plan to misspell a word. Make sure to do it properly. Do it really really bad<br/>
+so you dont find another word...<br/>
+Linage: the number of lines in printed or written matter, especially when used to calculate payment.<br/>
+Lineage: lineal descent from an ancestor; ancestry or extraction<br/>
 
 ## Build
 GitHub Actions will be the main carrier of builds.<br>
