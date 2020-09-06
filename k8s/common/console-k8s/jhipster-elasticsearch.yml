@@ -156,8 +156,14 @@ spec:
         - name: config
           configMap:
             name: es-config
-        - name: storage
-          emptyDir: {}
+  volumeClaimTemplates:
+    - metadata:
+        name: storage
+      spec:
+        accessModes: ['ReadWriteOnce']
+        resources:
+          requests:
+            storage: 1Gi
 ---
 apiVersion: apps/v1
 kind: StatefulSet

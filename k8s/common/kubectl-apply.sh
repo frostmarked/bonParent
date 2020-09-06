@@ -17,6 +17,12 @@ usage(){
  Usage: $0 -b
  Description: To delete app k8s manifests using the default \`kubectl delete -f\` command
 [OR]
+ Usage: $0 -c
+ Description: To apply infra k8s manifests using the default \`kubectl apply -f\` command
+[OR]
+ Usage: $0 -d
+ Description: To delete infra k8s manifests using the default \`kubectl delete -f\` command
+[OR]
  Usage: $0 -k
  Description: To apply k8s manifests using the kustomize \`kubectl apply -k\` command
 [OR]
@@ -62,6 +68,24 @@ defaultdelete() {
     kubectl delete -f namespace.yml
 }
 
+defaultinfra() {
+    suffix=k8s
+    kubectl apply -f namespace.yml
+    kubectl apply -f ../scaleway/bonconfig-${suffix}/
+    kubectl apply -f registry-${suffix}/
+    kubectl apply -f console-${suffix}/
+    kubectl apply -f messagebroker-${suffix}/
+}
+
+defaultdeleteinfra() {
+    suffix=k8s
+    kubectl delete -f messagebroker-${suffix}/
+    kubectl delete -f console-${suffix}/
+    kubectl delete -f registry-${suffix}/
+    kubectl delete -f ../scaleway/bonconfig-${suffix}/
+    kubectl delete -f namespace.yml
+}
+
 defaultapps() {
     suffix=k8s    
     kubectl apply -f bongateway-${suffix}/
@@ -95,14 +119,16 @@ scaffold() {
     skaffold run
 }
 
-[[ "$@" =~ ^-[abfgrks]{1}$ ]]  || usage;
+[[ "$@" =~ ^-[abcdfgrks]{1}$ ]]  || usage;
 
-while getopts ":abfgrks" opt; do
+while getopts ":abcdfgrks" opt; do
     case ${opt} in
     f ) echo "Applying default \`kubectl apply -f\`"; default ;;
     g ) echo "Deleting default \`kubectl delete -f\`"; defaultdelete ;;
-    a ) echo "Applying default \`kubectl apply -f\`"; defaultapps ;;
-    b ) echo "Deleting default \`kubectl delete -f\`"; defaultappsdelete ;;
+    a ) echo "Applying apps \`kubectl apply -f\`"; defaultapps ;;
+    b ) echo "Deleting apps \`kubectl delete -f\`"; defaultappsdelete ;;
+    c ) echo "Applying infra \`kubectl apply -f\`"; defaultinfra ;;
+    d ) echo "Deleting infra \`kubectl delete -f\`"; defaultdeleteinfra ;;
     r ) echo "Rollout restart default apps deplyments \`kubectl rollout restart\`"; defaultrolloutapps ;;
     k ) echo "Applying kustomize \`kubectl apply -k\`"; kustomize ;;
     s ) echo "Applying using skaffold \`skaffold run\`"; scaffold ;;
