@@ -552,3 +552,31 @@ How is it going?
 ```
 kubectl get pods -n bonlimousin
 ```
+
+### Kubernetes with ingress and letsencrypt on Scaleway
+
+Install cert-manager on Scaleway cluster
+```
+kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v1.0.4/cert-manager.yaml
+```
+
+Copy the local example yml of Issuer from
+```
+localhost/bonconfig-k8s/bon-letsencrypt.yml
+```
+to
+```
+scaleway/bonconfig-k8s/bon-letsencrypt.yml
+```
+
+Change server field to production url
+```
+spec.acme.server: https://acme-v02.api.letsencrypt.org/directory
+```
+
+and install it
+```
+kubectl apply -f scaleway/bonconfig-k8s/bon-letsencrypt.yml 
+```
+
+**Make sure that your DNS is pointing beta.limousin.se to your ingress url**
