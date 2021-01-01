@@ -118,9 +118,8 @@ spring:
 and use @GraphQLTest annotation on test class
 
 ### Only admins can register new users
-Disabled public registration of new users. The website will have a signed in mode eventually but I only want certain people to have access.<br/>
+Disabled public registration of new users. The website will have a signed in mode eventually but I only want certain people to have access, without invite email.<br/>
 By toggling a boolean spring property its back to default.<br/>
-TODO: Future version should have some kind of invite solution.
 
 ### Maven CI Friendly Versions
 Implemented https://maven.apache.org/maven-ci-friendly.html
@@ -164,7 +163,7 @@ java.util.concurrent.TimeoutException: null
 Dont be fooled like me...
 Its actually liquibase that found a lock. 
 But! the default setup from jhipster makes that very important piece of info go away in silence. 
-Or should I blame Spring Boot? or Liquibase?...
+Or should I blame Liquibase?... is it not obvious that it should be a warning???
 Anyway setting logging in prod profile to DEBUG solved the mystery.
 
 ```
@@ -189,6 +188,8 @@ logging:
     com.bonlimousin.gateway: INFO
     liquibase: INFO
 ```
+
+Or should I use logback-spring.xml ?
 
 ### Kafka with spring-kafka
 I guess there is a good explanation to why jhipster does not use spring-kafka.<br/>
@@ -479,6 +480,119 @@ spec:
   rules:
 ``` 
 
+### Picsum Photos
+
+Lorem ipsum photos from Picsum is great for developing. Beware that the JHipster Content Security Policy settings is tight. As it should be.
+But just adding picsum.photos as image source is not enough. Picsum also uses subdomains so change CSP img-src accordingly
+
+e.g.
+````
+img-src 'self' https://picsum.photos https://*.picsum.photos data:;
+````
+
+### HTTP Spinner aka API Spinner aka HTTP API Loader
+
+So much asynchronous stuff going on... in order to visualize that I decided to add a simple bootstrap spinner when calls are made to either API, REST or GraphQL.
+
+Steal with pride is always my first strategy! After a few minutes of inspiration from several blogs I decided to implement 
+https://medium.com/swlh/angular-loading-spinner-using-http-interceptor-63c1bb76517b . <br>
+While looking at the result I saw OFIs (opportunity for improvement). Main differences are:
+1. In the service, store the number of requests to an url, instead of a boolean. Why? Actually no point storing a boolean, could use a list instead. But most of all, lots of request will go to the same url --> graphql endpoint
+1. No custom spinner, just plain old bootstrap
+1. No subscription, let angular handle the observable with a async pipe
+1. The interceptor should use the rxjs operator tap, instead of map and catchError
+
+The result was
+
+```
+import { Injectable } from '@angular/core';
+import { BehaviorSubject } from 'rxjs';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class SpinnerService {
+  spinnerSubject: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
+  requestMap: Map<string, number> = new Map<string, number>();
+
+  constructor() {}
+
+  addRequest(url: string): void {
+    if (!url) {
+      console.warn('URL is missing');
+      return;
+    } else if (!url.includes('api/') && !url.includes('graphql')) {
+      return;
+    }
+    const n = this.requestMap.get(url) || 0;
+    this.requestMap.set(url, n + 1);
+    this.spinnerSubject.next(true);
+  }
+
+  removeRequest(url: string): void {
+    if (!url) {
+      console.warn('URL is missing');
+      return;
+    }
+    const n = this.requestMap.get(url) || 0;
+    if (n > 1) {
+      this.requestMap.set(url, n - 1);
+    } else {
+      this.requestMap.delete(url);
+    }
+
+    if (this.requestMap.size === 0) {
+      this.spinnerSubject.next(false);
+    }
+  }
+}
+```
+
+```
+import { Injectable } from '@angular/core';
+import { HttpRequest, HttpHandler, HttpEvent, HttpInterceptor, HttpResponse } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { tap } from 'rxjs/operators';
+import { SpinnerService } from 'app/shared/bon/spinner/spinner.service';
+
+@Injectable()
+export class SpinnerInterceptor implements HttpInterceptor {
+  constructor(private spinnerService: SpinnerService) {}
+
+  intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+    this.spinnerService.addRequest(request.url);
+    return next.handle(request).pipe(
+      tap(
+        (evt: HttpEvent<any>) => {
+          if (evt instanceof HttpResponse) {
+            this.spinnerService.removeRequest(request.url);
+          }
+          return evt;
+        },
+        () => {
+          this.spinnerService.removeRequest(request.url);
+        }
+      )
+    );
+  }
+}
+```
+
+main.component.ts constructor
+````
+// This prevents a ExpressionChangedAfterItHasBeenCheckedError for subsequent requests
+this.spinner$ = this.spinnerService.spinnerSubject.pipe(delay(0));
+````
+
+main.component.html
+```
+<div class="clearfix" *ngIf="spinner$ | async">
+    <div class="spinner-border spinner-border-sm float-right" role="status">
+        <span class="sr-only">Loading...</span>
+    </div>
+</div>
+```
+
 ## Did I just find a bug???
 **Incorrect entity name in integration tests**
 When generating code from JDL some ITs have lines like this
@@ -524,6 +638,16 @@ docker image tag bonreplicaservice frostmark/bonreplicaservice
 docker push frostmark/bonreplicaservice
 ```
 
+### Local CLI release for debug purpose
+e.g. bon-content-service
+```
+export RELEASE_TAG=dlog1a
+./mvnw -Pprod verify jib:dockerBuild -DargLine="-Xmx1024m" -DskipTests -Drevision=$RELEASE_TAG -Dchangelist=
+docker image tag boncontentservice:$RELEASE_TAG frostmark/boncontentservice:$RELEASE_TAG
+docker push frostmark/boncontentservice:$RELEASE_TAG
+kubectl set image --record deployment/boncontentservice boncontentservice-app=frostmark/boncontentservice:$RELEASE_TAG -n bonlimousin
+```
+
 ## Run
 
 ### docker-compose
@@ -553,6 +677,18 @@ How is it going?
 kubectl get pods -n bonlimousin
 ```
 
+### Restart app in cluster
+
+Kill all pods by scaling deployment to zero replicas
+```
+kubectl scale deployment bongateway --replicas=0 -n bonlimousin
+```
+
+Then scale it back to 1 again
+```
+kubectl scale deployment bongateway --replicas=1 -n bonlimousin
+```
+
 ### Kubernetes with ingress and letsencrypt on Scaleway
 
 Install cert-manager on Scaleway cluster
@@ -580,3 +716,20 @@ kubectl apply -f scaleway/bonconfig-k8s/bon-letsencrypt.yml
 ```
 
 **Make sure that your DNS is pointing beta.limousin.se to your ingress url**
+
+### Elasticsearch settings - 7 bad years later
+
+It will have to do, for now. 
+
+https://selleo.com/til/posts/esrgfyxjee-how-to-fix-elasticsearch-forbidden12index-read-only
+
+Do port forward of jhipster elasticsearch master
+```
+kubectl port-forward jhipster-elasticsearch-master-0 9200:9200 9300:9300 -n bonlimousin
+```
+
+Change settings for disk space threshold, in case of dynamic storage
+```
+curl -XPUT -H "Content-Type: application/json" http://localhost:9200/_cluster/settings -d '{ "transient": { "cluster.routing.allocation.disk.threshold_enabled": false } }'
+curl -XPUT -H "Content-Type: application/json" http://localhost:9200/_all/_settings -d '{"index.blocks.read_only_allow_delete": null}'
+```
