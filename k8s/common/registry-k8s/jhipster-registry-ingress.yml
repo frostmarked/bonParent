@@ -1,0 +1,29 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: jhipster-registry
+  namespace: bonlimousin
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    kubernetes.io/tls-acme: "true"
+    cert-manager.io/issuer: bon-letsencrypt-prod
+spec:
+  tls:
+  - hosts:
+    -  registry.limousin.se
+    secretName: registry-limousin-se-tls
+  rules:        
+    - host: jhipster-registry.bonlimousin.393a4c58-1580-4f08-89d7-15f104acfc8e.nodes.k8s.fr-par.scw.cloud
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: jhipster-registry
+              servicePort: 8761    
+    - host: registry.limousin.se
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: jhipster-registry
+              servicePort: 8761

@@ -20,7 +20,7 @@ spec:
           - path: /
             backend:
               serviceName: bongateway
-              servicePort: 9000
+              servicePort: 9000     
     - host: beta.limousin.se
       http:
         paths:

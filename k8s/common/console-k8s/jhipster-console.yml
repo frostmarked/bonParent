@@ -42,18 +42,3 @@ spec:
   type: ClusterIP
   selector:
     app: jhipster-console
----
-apiVersion: networking.k8s.io/v1beta1
-kind: Ingress
-metadata:
-  name: jhipster-console
-  namespace: bonlimousin
-spec:
-  rules:
-    - host: jhipster-console.bonlimousin.limousin.se
-      http:
-        paths:
-          - path: /
-            backend:
-              serviceName: jhipster-console
-              servicePort: 5601

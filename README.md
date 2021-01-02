@@ -11,10 +11,11 @@ Independent parent project for holding common configuration and documentation fo
 Im going to create an over-engineered website for my cows!<br/>
 Why? Learning by doing!
 
-Eventually it will reside on https://bonlimousin.com and https://limousin.se <br/>
-but so far nothing is there...<br/>
-But! My production k8s cluster (or is it a development cluster??) is up and running on Scaleway<br>
-http://bongateway.bonlimousin.393a4c58-1580-4f08-89d7-15f104acfc8e.nodes.k8s.fr-par.scw.cloud/
+Currently its located on https://beta.limousin.se <br>
+JHipster Registry on https://registry.limousin.se and the JHipster Console on https://console.limousin.se<br>
+My production k8s cluster (or is it a development cluster??) is running on Scaleway<br>
+
+
 
 [JHipster](https://www.jhipster.tech/) and [JHipster JDL](https://www.jhipster.tech/jdl) will be the backbone in powering the below sketch of the planned architecture.<br/>
 https://github.com/frostmarked/bonParent/blob/master/com-bonlimousin-jhipster-jdl.jdl
@@ -32,6 +33,8 @@ Purpose of each project and maybe a few notes about tech, beyond what can be rea
 
 Sonar Cloud is setup for all projects
 https://sonarcloud.io/organizations/frostmarked/projects
+
+Of course the plan is to pass the sonar quality gate. We will see how much effort I want to put into that...
 
 ### Bon Gateway
 UI that displays my cattle to the public.
@@ -715,7 +718,7 @@ and install it
 kubectl apply -f scaleway/bonconfig-k8s/bon-letsencrypt.yml 
 ```
 
-**Make sure that your DNS is pointing beta.limousin.se to your ingress url**
+**Make sure that your DNS is pointing beta.limousin.se to your ingress url** (plus the registry and console)
 
 ### Elasticsearch settings - 7 bad years later
 
