@@ -99,6 +99,8 @@ spec:
               value: ' -Xmx256m -Xms256m'
             - name: SPRING_LIQUIBASE_CONTEXTS
               value: prod,core
+            - name: MANAGEMENT_HEALTH_ELASTICSEARCH_ENABLED
+              value: 'false'
           resources:
             requests:
               memory: '512Mi'
