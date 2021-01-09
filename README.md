@@ -11,10 +11,13 @@ Independent parent project for holding common configuration and documentation fo
 Im going to create an over-engineered website for my cows!<br/>
 Why? Learning by doing!
 
-Currently its located on https://beta.limousin.se <br>
-JHipster Registry on https://registry.limousin.se and the JHipster Console on https://console.limousin.se<br>
-My production k8s cluster (or is it a development cluster??) is running on Scaleway<br>
-
+Its located on https://limousin.se <br>
+JHipster Registry on https://registry.limousin.se and the <br>JHipster Console on https://console.limousin.se<br>
+My production k8s cluster (or is it a playground cluster??) is running on https://www.scaleway.com<br>
+CI/CD with the help of GitHub Actions <br>
+Static code analysis from https://sonarcloud.io/ <br>
+Performance boost is provided by https://www.cloudflare.com/
+<br><br><br>
 
 
 [JHipster](https://www.jhipster.tech/) and [JHipster JDL](https://www.jhipster.tech/jdl) will be the backbone in powering the below sketch of the planned architecture.<br/>
@@ -89,7 +92,10 @@ Anyway, the plan was to always run version latest and just redploy by doing
 ```
 kubectl rollout restart deployment/bongateway -n bonlimousin
 ```
-if it exists a newer version
+if it exists a newer version.
+
+*TODO*<br>
+Probably time to revert this pull policy change. All release pipelines are setup and stable.
 
 ### Docker-compose for bonGateway
 WIP: Made my own docker-compose file for running all docker images except the gateway in some hybrid mode so they can communicate. Still need some testing ...<br/>
@@ -119,6 +125,10 @@ spring:
 ```
 
 and use @GraphQLTest annotation on test class
+
+More information can be found in https://github.com/frostmarked/bonGateway/blob/master/README.md#doing-graphql-with-oas-spec
+<br><br>
+
 
 ### Only admins can register new users
 Disabled public registration of new users. The website will have a signed in mode eventually but I only want certain people to have access, without invite email.<br/>
@@ -596,8 +606,10 @@ main.component.html
 </div>
 ```
 
+<br><br><br>
 ## Did I just find a bug???
-**Incorrect entity name in integration tests**
+
+### Incorrect entity name in integration tests
 When generating code from JDL some ITs have lines like this
 ```
 if (TestUtil.findAll(em, Cattle.class).isEmpty()) {
@@ -611,17 +623,21 @@ due to I use the jdl application config
 entitySuffix Entity
 ```
 
+<br><br><br>
 ## What in the name of some norse god!?
-**Why did I use camelCase in jdl basename???**<br/>
+
+### Why did I use camelCase in jdl basename???
 I should have used lower case and gotten rid of case sensitivity confusions<br>
 and sometimes its just ugly...
 
-**Linage != Lineage**<br/>
+### Linage != Lineage
 If you plan to misspell a word. Make sure to do it properly. Do it really really bad<br/>
 so you dont find another word...<br/>
 Linage: the number of lines in printed or written matter, especially when used to calculate payment.<br/>
 Lineage: lineal descent from an ancestor; ancestry or extraction<br/>
 
+
+<br><br><br>
 ## Build
 GitHub Actions will be the main carrier of builds.<br>
 Every now or then when I build locally be sure to give it some extra memory...
@@ -718,9 +734,11 @@ and install it
 kubectl apply -f scaleway/bonconfig-k8s/bon-letsencrypt.yml 
 ```
 
-**Make sure that your DNS is pointing beta.limousin.se to your ingress url** (plus the registry and console)
+**Make sure that your DNS is pointing limousin.se to your ingress url** (plus the registry and console)
 
 ### Elasticsearch settings - 7 bad years later
+
+Background: In production, startup of bonContentService fails with the confusing message that a random index cant be created. 
 
 It will have to do, for now. 
 
@@ -735,4 +753,18 @@ Change settings for disk space threshold, in case of dynamic storage
 ```
 curl -XPUT -H "Content-Type: application/json" http://localhost:9200/_cluster/settings -d '{ "transient": { "cluster.routing.allocation.disk.threshold_enabled": false } }'
 curl -XPUT -H "Content-Type: application/json" http://localhost:9200/_all/_settings -d '{"index.blocks.read_only_allow_delete": null}'
+```
+
+*Year 8 - Part 2*<br>
+Background: The Spring Boot Actuator health check is not helping either... in production.<br>
+Cant really tell from the logs what goes wrong after a while. 
+The app starts rebooting and flagged as 503. 
+
+Disabling the health check for ES in k8s config stopped this behaviour.<br>
+Some day i need to find out why this happens.
+
+```
+env:
+	- name: MANAGEMENT_HEALTH_ELASTICSEARCH_ENABLED
+  	value: 'false'
 ```
