@@ -163,7 +163,7 @@ spec:
         accessModes: ['ReadWriteOnce']
         resources:
           requests:
-            storage: 1Gi
+            storage: 3Gi
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -309,7 +309,7 @@ spec:
         accessModes: ['ReadWriteOnce']
         resources:
           requests:
-            storage: 1Gi
+            storage: 3Gi
 ---
 apiVersion: apps/v1
 kind: Deployment

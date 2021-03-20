@@ -12,17 +12,14 @@ spec:
   - hosts:
     -  registry.limousin.se
     secretName: registry-limousin-se-tls
-  rules:        
-    - host: jhipster-registry.bonlimousin.393a4c58-1580-4f08-89d7-15f104acfc8e.nodes.k8s.fr-par.scw.cloud
-      http:
-        paths:
-          - path: /
-            backend:
-              serviceName: jhipster-registry
-              servicePort: 8761    
+  rules:
     - host: registry.limousin.se
       http:
-        paths:
+        paths:          
+          - path: /services/
+            backend:
+              serviceName: bongateway
+              servicePort: 9000
           - path: /
             backend:
               serviceName: jhipster-registry

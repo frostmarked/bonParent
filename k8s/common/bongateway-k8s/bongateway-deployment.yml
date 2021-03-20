@@ -97,14 +97,14 @@ spec:
             - name: SPRING_SLEUTH_PROPAGATION_KEYS
               value: 'x-request-id,x-ot-span-context'
             - name: JAVA_OPTS
-              value: ' -Xmx256m -Xms256m'
+              value: ' -Xmx1536m -Xms256m'
           resources:
             requests:
-              memory: '512Mi'
-              cpu: '500m'
-            limits:
               memory: '1Gi'
               cpu: '1'
+            limits:
+              memory: '1.75Gi'
+              cpu: '2'
           ports:
             - name: http
               containerPort: 9000

@@ -4,7 +4,9 @@ metadata:
   name: bongateway
   namespace: bonlimousin
   annotations:
-    nginx.ingress.kubernetes.io/proxy-body-size: 8m
+    nginx.ingress.kubernetes.io/proxy-body-size: 10m
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "30"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "30"
     kubernetes.io/ingress.class: "nginx"
     kubernetes.io/tls-acme: "true"
     cert-manager.io/issuer: bon-letsencrypt-prod
