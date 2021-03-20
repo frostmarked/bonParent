@@ -741,19 +741,7 @@ kubectl apply -f scaleway/bonconfig-k8s/bon-letsencrypt.yml
 Background: In production, startup of bonContentService fails with the confusing message that a random index cant be created. 
 
 It will have to do, for now. 
-
 https://selleo.com/til/posts/esrgfyxjee-how-to-fix-elasticsearch-forbidden12index-read-only
-
-Do port forward of jhipster elasticsearch master
-```
-kubectl port-forward jhipster-elasticsearch-master-0 9200:9200 9300:9300 -n bonlimousin
-```
-
-Change settings for disk space threshold, in case of dynamic storage
-```
-curl -XPUT -H "Content-Type: application/json" http://localhost:9200/_cluster/settings -d '{ "transient": { "cluster.routing.allocation.disk.threshold_enabled": false } }'
-curl -XPUT -H "Content-Type: application/json" http://localhost:9200/_all/_settings -d '{"index.blocks.read_only_allow_delete": null}'
-```
 
 *Year 8 - Part 2*<br>
 Background: The Spring Boot Actuator health check is not helping either... in production.<br>
@@ -767,4 +755,41 @@ Some day i need to find out why this happens.
 env:
 	- name: MANAGEMENT_HEALTH_ELASTICSEARCH_ENABLED
   	value: 'false'
+```
+
+*Year 13 - Part 3*<br>
+
+Hmm .... hmmm ... while randomly clicking around in the k8s dashboard to see the status... a few records show up. A few supprising records.
+According to the dashboard I got two persistent volume claims called storage-jhipster-elasticsearch-data-0 and storage-jhipster-elasticsearch-master-0.
+Cant remember creating them... cant find a reference either... but elasticsearch is using them!<br>
+Will probably be a part 4 in this confusion. But for now incresing the size of them made the difference.<br>
+Also had few big indexes related to metrics. Removed them as well. Need to keep an eye on that in the future.<br>
+Summa sumarum: disk was at low watermark
+
+https://www.datadoghq.com/blog/elasticsearch-unassigned-shards/#reason-5-low-disk-watermark
+
+*Year of the Pandemic - Part 4*<br>
+
+So here is part 4. Maybe not the part 4 I was waiting for...<br>
+Until the part 4 I was looking for arrives (read solution) , check the env every now and then <br>
+<br>
+First check disk space of elastic search pods or more accurately the PVCs that belong to pods.
+```
+kubectl exec jhipster-elasticsearch-data-0 df -n bonlimousin
+kubectl exec jhipster-elasticsearch-master-0 df -n bonlimousin
+```
+es volume is probably full so connect to elaticsearch master
+```
+kubectl port-forward jhipster-elasticsearch-master-0 9200:9200 -n bonlimousin
+```
+If its full or almost full try to purge the logs index. 
+But maybe before that, have a peek of the status for logs and metrics  
+````
+curl -X GET "localhost:9200/_cat/indices/logs-*?v=true&s=index&pretty"
+curl -X GET "localhost:9200/_cat/indices/metrics-*?v=true&s=index&pretty"
+````
+Ok, so now we now that we have a shitload of indices. Start slow and remove a previous month or so
+```
+curl -X DELETE  "localhost:9200/logs-2021.01*"
+curl -X DELETE  "localhost:9200/metrics-2021.01*"
 ```
