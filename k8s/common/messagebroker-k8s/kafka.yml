@@ -1,3 +1,4 @@
+# kubectl label nodes scw-k8s-bonlimousin-default-9204ba39188843249d bonlimousin.com/jhipster-kafka=prod
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -13,6 +14,15 @@ spec:
       labels:
         app: jhipster-kafka
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: bonlimousin.com/jhipster-kafka
+                    operator: In
+                    values:
+                      - prod
       containers:
         - name: kafka
           image: confluentinc/cp-kafka:5.5.0
@@ -46,6 +56,7 @@ spec:
   ports:
     - port: 9092
 ---
+# kubectl label nodes scw-k8s-bonlimousin-default-9204ba39188843249d bonlimousin.com/jhipster-zookeeper=prod
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -61,6 +72,15 @@ spec:
       labels:
         app: jhipster-zookeeper
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: bonlimousin.com/jhipster-zookeeper
+                    operator: In
+                    values:
+                      - prod
       containers:
         - name: zookeeper
           image: confluentinc/cp-zookeeper:5.5.0

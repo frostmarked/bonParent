@@ -1,3 +1,4 @@
+# kubectl label nodes scw-k8s-bonlimousin-default-19e97ac7ea2b4fba8b bonlimousin.com/boncontentservice=prod
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -16,7 +17,15 @@ spec:
         version: 'v1'
     spec:
       affinity:
-        podAntiAffinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: bonlimousin.com/boncontentservice
+                    operator: In
+                    values:
+                      - prod
+        podAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
             - podAffinityTerm:
                 labelSelector:
@@ -30,7 +39,7 @@ spec:
       containers:
         - name: boncontentservice-app
           image: frostmark/boncontentservice
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: prod

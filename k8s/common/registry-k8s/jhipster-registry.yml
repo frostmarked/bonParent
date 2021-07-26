@@ -12,6 +12,8 @@
 #   This will create new replicas with the correct CLUSTER_SIZE which is mandatory so that all Eureka server can connect directly to all the others.
 #   Then delete the previous replica pods one by one so that they can be recreated with the correct CLUSTER_SIZE configuration.
 #   `kubectl delete pod jhipster-registry-0`, `kubectl delete pod jhipster-registry-1`
+#
+# kubectl label nodes scw-k8s-bonlimousin-default-aa391bf1f0d242a196 bonlimousin.com/jhipster-registry=prod
 apiVersion: v1
 kind: Service
 metadata:
@@ -50,6 +52,15 @@ spec:
         version: '1.0'
     spec:
       terminationGracePeriodSeconds: 10
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: bonlimousin.com/jhipster-registry
+                    operator: In
+                    values:
+                      - prod
       containers:
         - name: jhipster-registry
           image: jhipster/jhipster-registry:v6.5.0

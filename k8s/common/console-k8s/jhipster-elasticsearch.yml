@@ -1,3 +1,4 @@
+# kubectl label nodes scw-k8s-bonlimousin-default-590502482b6a4bcaa3 bonlimousin.com/jhipster-elasticsearch=prod
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -36,6 +37,15 @@ spec:
         component: jhipster-elasticsearch
         role: master
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: bonlimousin.com/jhipster-elasticsearch
+                    operator: In
+                    values:
+                      - prod
       initContainers:
         - name: init-sysctl
           image: busybox

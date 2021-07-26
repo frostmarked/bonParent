@@ -1,3 +1,4 @@
+# kubectl label nodes scw-k8s-bonlimousin-default-590502482b6a4bcaa3 bonlimousin.com/jhipster-zipkin=prod
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -13,6 +14,15 @@ spec:
       labels:
         app: jhipster-zipkin
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: bonlimousin.com/jhipster-zipkin
+                    operator: In
+                    values:
+                      - prod
       containers:
         - name: jhipster-zipkin
           image: jhipster/jhipster-zipkin:v4.1.0

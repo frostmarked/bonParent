@@ -1,10 +1,11 @@
+# kubectl label nodes scw-k8s-bonlimousin-default-aa391bf1f0d242a196 bonlimousin.com/bongateway=prod
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: bongateway
   namespace: bonlimousin
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: bongateway
@@ -16,7 +17,15 @@ spec:
         version: 'v1'
     spec:
       affinity:
-        podAntiAffinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: bonlimousin.com/bongateway
+                    operator: In
+                    values:
+                      - prod
+        podAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
             - podAffinityTerm:
                 labelSelector:
@@ -30,7 +39,7 @@ spec:
       containers:
         - name: bongateway-app
           image: frostmark/bongateway
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: prod

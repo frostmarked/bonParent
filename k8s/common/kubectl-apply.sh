@@ -45,6 +45,7 @@ logSummary() {
 default() {
     suffix=k8s
     kubectl apply -f namespace.yml
+    kubectl apply -f bonconfig-${suffix}/
     kubectl apply -f ../scaleway/bonconfig-${suffix}/
     kubectl apply -f registry-${suffix}/
     kubectl apply -f console-${suffix}/
@@ -65,12 +66,14 @@ defaultdelete() {
     kubectl delete -f console-${suffix}/
     kubectl delete -f registry-${suffix}/
     kubectl delete -f ../scaleway/bonconfig-${suffix}/
+    kubectl delete -f bonconfig-${suffix}/
     kubectl delete -f namespace.yml
 }
 
 defaultinfra() {
     suffix=k8s
     kubectl apply -f namespace.yml
+    kubectl apply -f bonconfig-${suffix}/
     kubectl apply -f ../scaleway/bonconfig-${suffix}/
     kubectl apply -f registry-${suffix}/
     kubectl apply -f console-${suffix}/
@@ -83,6 +86,7 @@ defaultdeleteinfra() {
     kubectl delete -f console-${suffix}/
     kubectl delete -f registry-${suffix}/
     kubectl delete -f ../scaleway/bonconfig-${suffix}/
+    kubectl delete -f bonconfig-${suffix}/
     kubectl delete -f namespace.yml
 }
 
