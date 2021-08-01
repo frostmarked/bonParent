@@ -493,6 +493,10 @@ spec:
   rules:
 ``` 
 
+Note3:
+The plan to let cloudflare save the day failed... The thumbnails are pulled from to often from the source.
+So the stress on the servers is unnecessary high. A less crappy solution is to store the thumbnails on S3 instead. And return a pre-signed url to the bucket instead of streaming bytes from the app and cluster
+
 ### Picsum Photos
 
 Lorem ipsum photos from Picsum is great for developing. Beware that the JHipster Content Security Policy settings is tight. As it should be.
@@ -734,7 +738,14 @@ and install it
 kubectl apply -f scaleway/bonconfig-k8s/bon-letsencrypt.yml 
 ```
 
-**Make sure that your DNS is pointing limousin.se to your ingress url** (plus the registry and console)
+**Make sure that your DNS is pointing limousin.se to your ingress url** (plus the registry and console)<br>
+
+#### Cloudflare can also manage tls
+
+And now it does for the root limousin.se.<br> 
+The original reason that caused this change was that the load balancer changed ip due to the tear down and setup of cluster. 
+Then the hand shake between letsencrypt and the cert manager failed for limousin.se,
+but not for beta.limousin.se due to it does not use the load balancer
 
 ### Elasticsearch settings - 7 bad years later
 
