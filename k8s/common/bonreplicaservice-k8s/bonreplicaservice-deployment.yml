@@ -39,7 +39,7 @@ spec:
       containers:
         - name: bonreplicaservice-app
           image: frostmark/bonreplicaservice
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: prod

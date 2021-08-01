@@ -39,7 +39,7 @@ spec:
       containers:
         - name: bongateway-app
           image: frostmark/bongateway
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: prod
@@ -77,6 +77,16 @@ spec:
                 configMapKeyRef:
                   name: bon-configmap
                   key: bongateway.jhipster-security-authentication-jwt-base64-secret
+            - name: APPLICATION_AWS_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: bon-secret
+                  key: aws.access-key
+            - name: APPLICATION_AWS_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: bon-secret
+                  key: aws.secret-key
             - name: KAFKA_CONSUMER_KEY_DESERIALIZER
               value: 'org.apache.kafka.common.serialization.StringDeserializer'
             - name: KAFKA_CONSUMER_VALUE_DESERIALIZER
