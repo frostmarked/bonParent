@@ -14,8 +14,9 @@ spec:
   tls:
   - hosts:
     -  beta.limousin.se
-    -  limousin.se
-    -  www.limousin.se
+    # let cloudflare handle tls for limousin.se
+    # -  limousin.se
+    # -  www.limousin.se
     secretName: beta-limousin-se-tls
   rules:    
     - host: bongateway.bonlimousin.393a4c58-1580-4f08-89d7-15f104acfc8e.nodes.k8s.fr-par.scw.cloud
